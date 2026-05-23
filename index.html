@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cash Flow Tracker</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.31/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+  <div class="min-h-screen bg-gray-100 px-3 sm:px-5 lg:px-8 py-5">
+    <div class="max-w-7xl mx-auto">
+
+      <!-- Navbar -->
+      <div
+        class="bg-white rounded-2xl shadow-xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+
+        <h1 class="text-blue-600 text-2xl sm:text-3xl lg:text-4xl font-bold text-center sm:text-left">
+          Cash-Flow Tracker
+        </h1>
+
+        <select id="currencySelect"
+          class="w-full sm:w-auto border border-gray-400 rounded-xl p-3 bg-white shadow cursor-pointer outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="INR">INR ₹</option>
+          <option value="USD">USD $</option>
+          <option value="EUR">EUR €</option>
+          <option value="GBP">GBP £</option>
+          <option value="JPY">JPY ¥</option>
+        </select>
+      </div>
+
+      <!-- Balance Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mt-8">
+
+        <!-- Salary -->
+        <div class="bg-white rounded-2xl shadow-xl border-l-8 border-green-600 p-5">
+          <p class="text-gray-500 font-bold text-lg sm:text-xl">
+            Total Salary
+          </p>
+
+          <p id="salaryAmt" class="font-bold text-2xl lg:text-3xl mt-3 break-words">
+            ₹0.00
+          </p>
+        </div>
+
+        <!-- Expense -->
+        <div class="bg-white rounded-2xl shadow-xl border-l-8 border-red-600 p-5">
+          <p class="text-gray-500 font-bold text-lg sm:text-xl">
+            Total Expenses
+          </p>
+
+          <p id="expenseAmt" class="font-bold text-2xl lg:text-3xl mt-3 break-words">
+            ₹0.00
+          </p>
+        </div>
+
+        <!-- Remaining -->
+        <div class="bg-white rounded-2xl shadow-xl border-l-8 border-blue-600 p-5 sm:col-span-2 xl:col-span-1">
+          <p class="text-gray-500 font-bold text-lg sm:text-xl">
+            Remaining Balance
+          </p>
+
+          <p id="remainingAmt" class="font-bold text-2xl lg:text-3xl mt-3 break-words">
+            ₹0.00
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Form + Chart -->
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-10">
+
+        <!-- Form -->
+        <div class="bg-white rounded-2xl shadow-xl p-5 sm:p-6">
+          <h2 class="font-semibold text-xl sm:text-2xl mb-6">
+            Add Salary & Expense
+          </h2>
+
+          <form class="flex flex-col gap-4">
+
+            <input type="number" id="salaryInput" placeholder="Enter Salary"
+              class="w-full p-3 border border-gray-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-400" />
+
+            <input type="text" id="expenseName" placeholder="Expense Name"
+              class="w-full p-3 border border-gray-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-400" />
+
+            <input type="number" id="expenseInput" placeholder="Expense Amount"
+              class="w-full p-3 border border-gray-400 rounded-xl outline-none focus:ring-2 focus:ring-blue-400" />
+
+            <button id="salary_btn"
+              class="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition duration-300">
+              Add Salary
+            </button>
+
+            <button id="expense_btn"
+              class="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition duration-300">
+              Add Expense
+            </button>
+
+            <button id="downloadBtn"
+              class="w-full bg-black text-white py-3 rounded-xl hover:bg-gray-800 transition duration-300">
+              Download Report
+            </button>
+
+          </form>
+        </div>
+
+        <!-- Chart -->
+        <div class="bg-white rounded-2xl shadow-xl p-5 sm:p-6 flex flex-col items-center">
+
+          <h2 class="font-semibold text-xl sm:text-2xl mb-6 self-start">
+            Expense Overview
+          </h2>
+
+          <div class="w-full h-[300px] sm:h-[400px] flex items-center justify-center">
+            <canvas id="myChart" class="max-w-full max-h-full"></canvas>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- History -->
+      <div class="bg-white mt-10 p-4 sm:p-6 rounded-2xl shadow-xl overflow-hidden">
+
+        <h2 class="font-semibold text-xl sm:text-2xl mb-5">
+          Expense History
+        </h2>
+
+        <div class="overflow-x-auto">
+
+          <table class="w-full min-w-[500px]">
+
+            <thead>
+              <tr class="border-b-2 text-center">
+                <th class=" py-4 px-2 text-sm sm:text-lg">
+                  Expense Name
+                </th>
+
+                <th class=" py-4 px-2 text-sm sm:text-lg">
+                  Expense Amount
+                </th>
+
+                <th class=" py-4 px-2 text-sm sm:text-lg text-center">
+                  Delete
+                </th>
+              </tr>
+            </thead>
+
+            <tbody id="historyTable"></tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+  <script>
+    const salaryInput = document.getElementById("salaryInput")
+    const expenseName = document.getElementById("expenseName")
+    const expenseInput = document.getElementById("expenseInput")
+    const salary_btn = document.getElementById("salary_btn")
+    const expense_btn = document.getElementById("expense_btn")
+    const salaryAmt = document.getElementById("salaryAmt")
+    const expenseAmt = document.getElementById("expenseAmt")
+    const remainingAmt = document.getElementById("remainingAmt")
+    const historyTable = document.getElementById("historyTable")
+    const currencySelect = document.getElementById("currencySelect")
+    const downloadBtn = document.getElementById("downloadBtn")
+
+
+    const chrt = document.getElementById("myChart")
+
+    let currentCurrency = "INR"
+    let exchangeRates = {
+      INR: 1
+    }
+    const currencySymbols = {
+      INR: "₹",
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      JPY: "¥"
+    }
+
+    const data = {
+      salary: 0,
+      expenses: []
+    }
+
+    let myChart
+
+    async function fetchExchangeRates() {
+      try {
+        const response = await fetch(
+          "https://api.frankfurter.app/latest?from=INR"
+        )
+        const result = await response.json()
+        exchangeRates = {
+          INR: 1,
+          USD: result.rates.USD || 0,
+          EUR: result.rates.EUR || 0,
+          GBP: result.rates.GBP || 0,
+          JPY: result.rates.JPY || 0
+        }
+        console.log("Rates:", exchangeRates)
+        updateBalance()
+      } catch (error) {
+        console.log("Exchange Rate Error:", error)
+        exchangeRates = {
+          INR: 1,
+          USD: 0.012,
+          EUR: 0.011,
+          GBP: 0.0095,
+          JPY: 1.78
+        }
+        updateBalance()
+      }
+    }
+
+    function saveData() {
+      const appData = {
+        salary: data.salary,
+        expenses: data.expenses,
+        currency: currentCurrency
+      }
+      localStorage.setItem(
+        "cashFlowData",
+        JSON.stringify(appData)
+      )
+    }
+
+    function loadData() {
+      const savedData = JSON.parse(
+        localStorage.getItem("cashFlowData")
+      )
+      if (savedData) {
+        data.salary = Number(savedData.salary) || 0
+        data.expenses = savedData.expenses || []
+        currentCurrency = savedData.currency || "INR"
+        currencySelect.value = currentCurrency
+      }
+      updateBalance()
+    }
+
+    function formatCurrency(amount) {
+      amount = Number(amount) || 0
+      const rate = Number(exchangeRates[currentCurrency]) || 1
+      const convertedAmount = amount * rate
+      return `${currencySymbols[currentCurrency]}${convertedAmount.toFixed(2)}`
+    }
+
+    function updateBalance() {
+      let totalExpense = 0
+      data.expenses.forEach((item) => {
+        totalExpense += Number(item.expense)
+      })
+      const salary = Number(data.salary) || 0
+      const remainingBalance = salary - totalExpense
+      salaryAmt.innerText = formatCurrency(salary)
+      expenseAmt.innerText = formatCurrency(totalExpense)
+      remainingAmt.innerText = formatCurrency(remainingBalance)
+      if (remainingBalance < 5000) {
+        remainingAmt.classList.add("text-red-600")
+      } else {
+        remainingAmt.classList.remove("text-red-600")
+      }
+      expenseHistory()
+      renderChart()
+      saveData()
+    }
+
+    function expenseHistory() {
+      historyTable.innerHTML = ""
+      data.expenses.forEach((item, index) => {
+        historyTable.innerHTML += `
+        <tr class="text-center border-b">
+          <td class="py-4">
+            ${item.expenseName}
+          </td>
+          <td class="py-4">
+            ${formatCurrency(item.expense)}
+          </td>
+          <td class="py-4">
+            <i onclick="deleteExpense(${index})"
+               class="material-icons text-red-500 cursor-pointer">
+               delete
+            </i>
+          </td>
+        </tr>
+      `
+      })
+    }
+
+    salary_btn.addEventListener("click", (e) => {
+      e.preventDefault()
+      const salaryValue = Number(salaryInput.value)
+      if (salaryValue <= 0) {
+        alert("Enter valid salary")
+        return
+      }
+      data.salary = salaryValue
+      updateBalance()
+      salaryInput.value = ""
+    })
+
+    expense_btn.addEventListener("click", (e) => {
+      e.preventDefault()
+      const expenseValue = Number(expenseInput.value)
+      if (
+        expenseName.value === "" ||
+        expenseValue <= 0
+      ) {
+        alert("Enter valid expense")
+        return
+      }
+      let totalExpense = 0
+      data.expenses.forEach((item) => {
+        totalExpense += Number(item.expense)
+      })
+      if (totalExpense + expenseValue > data.salary) {
+        alert("Expense exceeds salary")
+        return
+      }
+      data.expenses.push({
+        expenseName: expenseName.value,
+        expense: expenseValue
+      })
+      updateBalance()
+      expenseName.value = ""
+      expenseInput.value = ""
+    })
+
+    function deleteExpense(index) {
+      const confirmDelete = confirm("Delete expense?")
+      if (confirmDelete) {
+        data.expenses.splice(index, 1)
+        updateBalance()
+      }
+    }
+
+    currencySelect.addEventListener("change", () => {
+      currentCurrency = currencySelect.value
+      saveData()
+      updateBalance()
+    })
+
+    function renderChart() {
+      let totalExpense = 0
+      data.expenses.forEach((item) => {
+        totalExpense += Number(item.expense)
+      })
+      const remainingBalance =
+        Number(data.salary) - totalExpense
+      const rate =
+        Number(exchangeRates[currentCurrency]) || 1
+      const convertedExpense =
+        totalExpense * rate
+      const convertedRemaining =
+        remainingBalance * rate
+      if (myChart) {
+        myChart.destroy()
+      }
+      myChart = new Chart(chrt, {
+        type: "pie",
+        data: {
+          labels: [
+            `Expenses (${currencySymbols[currentCurrency]})`,
+            `Remaining (${currencySymbols[currentCurrency]})`
+          ],
+          datasets: [{
+            data: [
+              convertedExpense,
+              convertedRemaining
+            ],
+            backgroundColor: [
+              "#ef4444",
+              "#22c55e"
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function (context) {
+                  return `${currencySymbols[currentCurrency]}${context.raw.toFixed(2)}`
+                }
+              }
+            }
+          }
+        }
+      })
+    }
+
+    downloadBtn.addEventListener("click", (e) => {
+      e.preventDefault()
+      const { jsPDF } = window.jspdf
+      const doc = new jsPDF()
+      let totalExpense = 0
+      data.expenses.forEach((item) => {
+        totalExpense += Number(item.expense)
+      })
+      const remainingBalance =
+        Number(data.salary) - totalExpense
+      doc.setFontSize(20)
+      doc.text("Cash Flow Report", 20, 20)
+      doc.setFontSize(14)
+      doc.text(
+        `Total Salary: ${formatCurrency(data.salary)}`,
+        20,
+        40
+      )
+      doc.text(
+        `Total Expenses: ${formatCurrency(totalExpense)}`,
+        20,
+        50
+      )
+      doc.text(
+        `Remaining Balance: ${formatCurrency(remainingBalance)}`,
+        20,
+        60
+      )
+      const tableColumn = [
+        "Expense Name",
+        "Expense Amount"
+      ]
+      const tableRows = []
+      data.expenses.forEach((item) => {
+        tableRows.push([
+          item.expenseName,
+          formatCurrency(item.expense)
+        ])
+      })
+      doc.autoTable({
+        startY: 80,
+        head: [tableColumn],
+        body: tableRows
+      })
+      doc.save("CashFlowReport.pdf")
+    })
+
+
+    async function initApp() {
+      loadData()
+      await fetchExchangeRates()
+      updateBalance()
+    }
+
+    initApp()
+
+  </script>
+
+</body>
+
+</html>
